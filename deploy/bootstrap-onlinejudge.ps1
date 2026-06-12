@@ -1,6 +1,9 @@
 param(
     [string]$InstallDir = "C:\OJ\OnlineJudgeDeploy",
-    [string]$PublicHost = "http://127.0.0.1"
+    [string]$PublicHost = "http://127.0.0.1",
+    [string]$DeployRepo = "https://github.com/QingdaoU/OnlineJudgeDeploy.git",
+    [string]$DeployBranch = "2.0",
+    [switch]$Update
 )
 
 $ErrorActionPreference = "Stop"
@@ -20,7 +23,16 @@ if (-not (Test-Path $parent)) {
 }
 
 if (-not (Test-Path $InstallDir)) {
-    git clone -b 2.0 https://github.com/QingdaoU/OnlineJudgeDeploy.git $InstallDir
+    git clone -b $DeployBranch $DeployRepo $InstallDir
+} elseif ($Update) {
+    Push-Location $InstallDir
+    try {
+        git fetch origin
+        git checkout $DeployBranch
+        git pull --ff-only
+    } finally {
+        Pop-Location
+    }
 }
 
 Push-Location $InstallDir

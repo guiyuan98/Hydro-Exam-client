@@ -46,6 +46,21 @@ npm install
 npm start
 ```
 
+打包给学生使用的 Windows 文件夹版：
+
+```powershell
+cd C:\Users\13456\Documents\GYOJ\client\oj-shell
+npm run dist:win
+```
+
+生成目录位于：
+
+```text
+client/oj-shell/dist/win-unpacked/
+```
+
+学生运行里面的 `GYOJ Exam Client.exe` 后默认就是正式考试模式，会直接打开 `http://192.168.1.149`。不要优先使用单 exe 便携包，因为内置 MinGW 后首次解压会很慢。
+
 开发调试模式，不锁屏、不清空剪贴板：
 
 ```powershell
@@ -58,13 +73,13 @@ npm run start:dev
 client/oj-shell/gyoj-shell.json
 ```
 
-默认 OJ 地址是：
+默认学生端 OJ 地址是：
 
 ```text
-http://127.0.0.1
+http://192.168.1.149
 ```
 
-如果部署到云服务器，把 `serverBaseUrl` 改成你的域名或公网 IP。
+这是当前服务器的局域网 IP。学生电脑必须和服务器在同一网络内才能访问。若部署到云服务器，把 `serverBaseUrl` 改成你的域名或公网 IP。
 
 ## 论文材料
 

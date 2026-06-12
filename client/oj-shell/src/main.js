@@ -9,8 +9,8 @@ const configPath = path.join(rootDir, "gyoj-shell.json");
 
 function loadConfig() {
   const fallback = {
-    serverBaseUrl: "http://127.0.0.1",
-    compilerPath: "../../.qt/Tools/mingw1310_64/bin/g++.exe",
+    serverBaseUrl: "http://192.168.1.149",
+    compilerPath: "tools/mingw/bin/g++.exe",
     localRunTimeoutMs: 3000,
     language: "zh-CN",
     editor: {
@@ -54,9 +54,24 @@ let processTimer;
 app.commandLine.appendSwitch("lang", config.language || "zh-CN");
 
 function normalizedUrl(url) {
-  const value = String(url || "").trim() || "http://127.0.0.1";
+  const value = String(url || "").trim() || "http://192.168.1.149";
   if (value.startsWith("http://") || value.startsWith("https://")) return value;
   return `https://${value}`;
+}
+
+function resolveCompilerPath() {
+  const configured = String(config.compilerPath || "").trim();
+  const candidates = [];
+  if (path.isAbsolute(configured)) {
+    candidates.push(configured);
+  } else {
+    if (process.resourcesPath) {
+      candidates.push(path.resolve(process.resourcesPath, configured));
+    }
+    candidates.push(path.resolve(rootDir, configured));
+    candidates.push(path.resolve(rootDir, "../../.qt/Tools/mingw1310_64/bin/g++.exe"));
+  }
+  return candidates.find((candidate) => fs.existsSync(candidate)) || candidates[0];
 }
 
 function proctorEnabled() {
@@ -309,7 +324,7 @@ ipcMain.handle("run-sample", async (_event, payload) => {
   const exePath = path.join(workDir, "main.exe");
   fs.writeFileSync(sourcePath, payload.code || "", "utf8");
 
-  const compilerPath = path.resolve(rootDir, config.compilerPath);
+  const compilerPath = resolveCompilerPath();
   const compile = await runCommand(
     compilerPath,
     ["-std=c++14", "-O2", "-pipe", sourcePath, "-o", exePath],

@@ -7,9 +7,27 @@
     "start": "electron .",
     "start:dev": "electron . --no-proctor",
     "start:tools": "electron . --tools",
-    "start:dev-tools": "electron . --no-proctor --tools"
+    "start:dev-tools": "electron . --no-proctor --tools",
+    "dist:win": "electron-builder --win --dir --x64"
+  },
+  "build": {
+    "appId": "com.guiyuan98.gyoj",
+    "productName": "GYOJ Exam Client",
+    "files": [
+      "src/**/*",
+      "gyoj-shell.json",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../../.qt/Tools/mingw1310_64",
+        "to": "tools/mingw"
+      }
+    ],
+    "win": {}
   },
   "devDependencies": {
-    "electron": "^31.7.7"
+    "electron": "^31.7.7",
+    "electron-builder": "^26.0.12"
   }
 }

@@ -2,7 +2,7 @@
 
 本目录用于把项目部署成“自己的青岛 OJ”，而不是打开官方演示站。
 
-官方部署方式是使用 `OnlineJudgeDeploy` 的 `2.0` 分支，并通过 Docker Compose 一键启动。官方 README 给出的核心命令是：
+官方部署方式是使用 `OnlineJudgeDeploy` 的 `2.0` 分支，并通过 Docker Compose 一键启动。当前上游公开标签最新仍是 `v1.6.1`，`2.0` 分支也指向该标签；如果你使用的是新版 fork 或新版分支，可以通过脚本参数替换部署来源。
 
 ```bash
 git clone -b 2.0 https://github.com/QingdaoU/OnlineJudgeDeploy.git
@@ -27,10 +27,34 @@ cd C:\Users\13456\Documents\GYOJ
 .\deploy\bootstrap-onlinejudge.ps1 -InstallDir C:\OJ\OnlineJudgeDeploy -PublicHost http://127.0.0.1
 ```
 
+使用指定新版仓库或分支：
+
+```powershell
+.\deploy\bootstrap-onlinejudge.ps1 `
+  -InstallDir C:\OJ\OnlineJudgeDeploy `
+  -PublicHost http://192.168.1.149 `
+  -DeployRepo https://github.com/你的新版部署仓库/OnlineJudgeDeploy.git `
+  -DeployBranch main `
+  -Update
+```
+
 启动后访问：
 
 ```text
 http://127.0.0.1
+```
+
+当前这台服务器的局域网访问地址是：
+
+```text
+http://192.168.1.149
+```
+
+如果学生电脑无法访问，请用管理员权限打开 PowerShell 后执行：
+
+```powershell
+cd C:\Users\13456\Documents\GYOJ
+.\deploy\open-server-firewall.ps1
 ```
 
 如果部署到云服务器，把 `PublicHost` 改成你的域名或公网 IP，例如：

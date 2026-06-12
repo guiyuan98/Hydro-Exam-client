@@ -13,7 +13,7 @@
 
 ## 部署 OJ
 
-官方推荐使用 `OnlineJudgeDeploy` 的 `2.0` 分支：
+官方推荐使用 `OnlineJudgeDeploy` 的 `2.0` 分支。当前上游公开标签最新仍是 `v1.6.1`；如果你要使用新版 fork 或新版分支，可以把 `DeployRepo`、`DeployBranch` 换成对应来源。
 
 ```powershell
 git clone -b 2.0 https://github.com/QingdaoU/OnlineJudgeDeploy.git C:\OJ\OnlineJudgeDeploy
@@ -26,6 +26,17 @@ docker compose up -d
 ```powershell
 cd C:\Users\13456\Documents\GYOJ
 .\deploy\bootstrap-onlinejudge.ps1 -InstallDir C:\OJ\OnlineJudgeDeploy -PublicHost http://127.0.0.1
+```
+
+指定新版来源：
+
+```powershell
+.\deploy\bootstrap-onlinejudge.ps1 `
+  -InstallDir C:\OJ\OnlineJudgeDeploy `
+  -PublicHost http://192.168.1.149 `
+  -DeployRepo https://github.com/你的新版部署仓库/OnlineJudgeDeploy.git `
+  -DeployBranch main `
+  -Update
 ```
 
 ## 初始化超级管理员
@@ -55,6 +66,14 @@ client/oj-shell/gyoj-shell.json
 ```json
 {
   "serverBaseUrl": "http://127.0.0.1"
+}
+```
+
+机房局域网部署时，学生端不能使用 `127.0.0.1`，必须使用服务器局域网 IP，例如当前服务器：
+
+```json
+{
+  "serverBaseUrl": "http://192.168.1.149"
 }
 ```
 

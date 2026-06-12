@@ -6,9 +6,12 @@
 | D-02 | 从零部署 OJ | 执行 `deploy/bootstrap-onlinejudge.ps1` | 克隆 `OnlineJudgeDeploy` 并启动容器 |
 | D-03 | 超级管理员初始化 | 执行 `deploy/create-super-admin.ps1` | 可用管理员账号登录自己的 OJ |
 | D-04 | 中文环境 | 访问 OJ 首页和个人设置 | 默认或可切换为中文 |
+| D-05 | 局域网访问 | 学生电脑访问 `http://192.168.1.149` | 能打开 OJ 首页 |
+| D-06 | 防火墙 | 服务器管理员执行 `deploy/open-server-firewall.ps1` | Windows 防火墙允许 80/443 入站 |
 | C-01 | 客户端默认地址 | 启动 `npm start` | 主窗口访问 `gyoj-shell.json` 中的 `serverBaseUrl` |
 | C-02 | 编辑器自动打开 | 启动客户端 | 本地 C++ 编辑器窗口自动显示 |
 | C-03 | 开发模式 | 执行 `npm run start:dev` | 不启用锁屏和剪贴板清理 |
+| C-04 | 学生发行包 | 解压 `GYOJ-Student-Exam-Client-win-x64.zip` 并运行 `GYOJ Exam Client.exe` | 默认进入考试模式并打开服务器 OJ |
 | P-01 | 全屏置顶 | 正式模式启动 | 主窗口全屏置顶 |
 | P-02 | 复制粘贴限制 | 按 `Ctrl+C` / `Ctrl+V` / `Ctrl+X` | 快捷键被拦截，剪贴板被清空 |
 | P-03 | 右键限制 | 在 OJ 页面右键 | 不显示右键菜单 |

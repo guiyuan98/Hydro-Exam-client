@@ -1,6 +1,6 @@
 {
-  "serverBaseUrl": "http://127.0.0.1",
-  "compilerPath": "../../.qt/Tools/mingw1310_64/bin/g++.exe",
+  "serverBaseUrl": "http://192.168.1.149",
+  "compilerPath": "tools/mingw/bin/g++.exe",
   "localRunTimeoutMs": 3000,
   "language": "zh-CN",
   "editor": {

@@ -34,6 +34,7 @@
 - Qt 构建产物 `client/gyoj-client/build*/`
 - Electron 依赖 `client/oj-shell/node_modules/`
 - Electron 打包产物 `client/oj-shell/dist/`
+  打包产物较大，不提交到 GitHub。需要发给学生时在本机生成 zip。
 
 仓库中应保留：
 
