@@ -1,6 +1,6 @@
 # Hydro OJ 部署说明
 
-本目录用于把 GYOJ 部署成“自己的 Hydro OJ + Windows 考试客户端”，不是打开 Hydro 官方演示站。Hydro 官方文档推荐 Linux 环境，安装脚本为：
+本目录用于把项目部署成“自己的 Hydro OJ + Windows 考试客户端”，不是打开 Hydro 官方演示站。Hydro 官方文档推荐 Linux 环境，安装脚本为：
 
 ```bash
 LANG=zh . <(curl https://hydro.ac/setup.sh)
@@ -83,4 +83,3 @@ C:\Users\13456\Documents\GYOJ\client\oj-shell\gyoj-shell.json
 - Hydro 负责账号、题库、比赛、正式提交、隐藏数据判题和排名。
 - `client/oj-shell` 负责全屏考试入口、本地 C++ 编辑器、样例运行、禁止复制粘贴、切屏锁定和违规提示。
 - 隐藏测试数据只保存在 Hydro 服务端，客户端只运行题面样例和自定义样例。
-

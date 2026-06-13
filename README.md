@@ -1,4 +1,4 @@
-# GYOJ Hydro OI 考试客户端
+# Hydro 二次开发：OI 安全考试客户端
 
 本项目把 [Hydro OJ](https://hydro.js.org/zh/docs/Hydro) 和 Windows 考试客户端合在一起，用于毕业设计和机房 OI 考试演示。学生打开客户端后默认进入正式考试模式，主窗口直接加载你的 Hydro 服务器，右侧自动打开本地 C++ 编辑器和样例运行器。
 
@@ -62,17 +62,17 @@ npm start
 学生发行包位置：
 
 ```text
-C:\Users\13456\Documents\GYOJ\client\oj-shell\dist\GYOJ-Student-Exam-Client-win-x64.zip
+C:\Users\13456\Documents\GYOJ\client\oj-shell\dist\Hydro-Exam-Client-win-x64.zip
 ```
 
-学生解压后运行 `GYOJ Exam Client.exe`，默认进入考试模式并打开 `http://192.168.1.149`。
+学生解压后运行 `Hydro Exam Client.exe`，默认进入考试模式并打开 `http://192.168.1.149`。
 
 ## 重新打包
 
 ```powershell
 cd C:\Users\13456\Documents\GYOJ\client\oj-shell
 npm run dist:win
-Compress-Archive -Path .\dist\win-unpacked\* -DestinationPath .\dist\GYOJ-Student-Exam-Client-win-x64.zip -Force
+Compress-Archive -Path .\dist\win-unpacked\* -DestinationPath .\dist\Hydro-Exam-Client-win-x64.zip -Force
 ```
 
 ## 毕业论文主题
@@ -80,4 +80,3 @@ Compress-Archive -Path .\dist\win-unpacked\* -DestinationPath .\dist\GYOJ-Studen
 推荐题目：**《面向 OI 竞赛的在线评测系统安全考试客户端设计与实现》**。
 
 论文表述建议：系统基于 Hydro OJ 提供题库、比赛、提交、排名和远程判题能力；Windows 客户端提供受控考试入口、本地样例测评和用户态监考。不要声称“绝对防作弊”，应表述为“在受控 Windows 机房、管理员权限和非内核级对抗条件下，提高切屏、复制粘贴、换机、换 IP 等行为的发现和阻断能力”。
-

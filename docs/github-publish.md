@@ -7,13 +7,13 @@
 1. 在 GitHub 网页中新建仓库，例如：
 
    ```text
-   gyoj-secure-client
+   hydro-exam-client
    ```
 
 2. 复制仓库地址，例如：
 
    ```text
-   https://github.com/你的用户名/gyoj-secure-client.git
+   https://github.com/你的用户名/hydro-exam-client.git
    ```
 
 3. 在本项目根目录执行：

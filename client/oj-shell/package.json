@@ -1,5 +1,5 @@
 {
-  "name": "gyoj-oj-shell",
+  "name": "hydro-oj-exam-shell",
   "version": "0.1.0",
   "description": "Hydro OJ secure desktop shell with local OI editor",
   "main": "src/main.js",
@@ -11,8 +11,8 @@
     "dist:win": "electron-builder --win --dir --x64"
   },
   "build": {
-    "appId": "com.guiyuan98.gyoj",
-    "productName": "GYOJ Exam Client",
+    "appId": "io.github.guiyuan98.hydro-exam-client",
+    "productName": "Hydro Exam Client",
     "files": [
       "src/**/*",
       "gyoj-shell.json",

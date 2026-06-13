@@ -218,7 +218,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
-    title: "GYOJ Hydro OJ Client",
+    title: "Hydro OJ Exam Client",
     backgroundColor: "#ffffff",
     fullscreen: examMode,
     kiosk: examMode,
@@ -233,7 +233,7 @@ function createWindow() {
   toolsWindow = new BrowserWindow({
     width: 520,
     height: 900,
-    title: "GYOJ Local OI Editor",
+    title: "Hydro Local OI Editor",
     show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -245,7 +245,7 @@ function createWindow() {
   toolsWindow.setAlwaysOnTop(true, "floating");
 
   lockWindow = new BrowserWindow({
-    title: "GYOJ Exam Locked",
+    title: "Hydro Exam Locked",
     show: false,
     fullscreen: true,
     frame: false,

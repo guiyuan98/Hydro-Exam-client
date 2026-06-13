@@ -18,7 +18,7 @@ if (-not $wslIp) {
 Write-Host "Publishing Windows 0.0.0.0:$HttpPort to WSL $wslIp:80"
 netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=$HttpPort 2>$null | Out-Null
 netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=$HttpPort connectaddress=$wslIp connectport=80
-netsh advfirewall firewall add rule name="GYOJ Hydro HTTP $HttpPort" dir=in action=allow protocol=TCP localport=$HttpPort | Out-Null
+netsh advfirewall firewall add rule name="Hydro Exam HTTP $HttpPort" dir=in action=allow protocol=TCP localport=$HttpPort | Out-Null
 
 $lanIp = (Get-NetIPAddress -AddressFamily IPv4 |
     Where-Object { $_.InterfaceAlias -notlike "*Loopback*" -and $_.IPAddress -notlike "169.254.*" -and $_.IPAddress -notlike "172.*" } |
@@ -27,4 +27,3 @@ $lanIp = (Get-NetIPAddress -AddressFamily IPv4 |
 Write-Host "Hydro LAN URL:"
 Write-Host "  http://$lanIp/"
 netsh interface portproxy show all
-
