@@ -84,6 +84,220 @@ function setStatus(text) {
   statusText.textContent = text;
 }
 
+function syncEditorAfterProgrammaticChange() {
+  activeSource().code = codeInput.value;
+  updateLineNumbers();
+  saveState();
+}
+
+function setEditorText(value, selectionStart, selectionEnd = selectionStart) {
+  codeInput.value = value;
+  codeInput.selectionStart = selectionStart;
+  codeInput.selectionEnd = selectionEnd;
+  syncEditorAfterProgrammaticChange();
+}
+
+function selectedRange() {
+  return {
+    start: codeInput.selectionStart,
+    end: codeInput.selectionEnd,
+    value: codeInput.value,
+  };
+}
+
+function lineStartAt(text, position) {
+  const index = text.lastIndexOf("\n", Math.max(0, position - 1));
+  return index === -1 ? 0 : index + 1;
+}
+
+function lineEndAt(text, position) {
+  const index = text.indexOf("\n", position);
+  return index === -1 ? text.length : index;
+}
+
+function lineIndentAt(text, position) {
+  const start = lineStartAt(text, position);
+  const match = text.slice(start, lineEndAt(text, position)).match(/^\s*/);
+  return match ? match[0] : "";
+}
+
+function replaceEditorRange(start, end, inserted, caretStart = start + inserted.length, caretEnd = caretStart) {
+  const text = codeInput.value;
+  setEditorText(text.slice(0, start) + inserted + text.slice(end), caretStart, caretEnd);
+}
+
+function handleAutoPair(event) {
+  const pairs = {
+    "(": ")",
+    "[": "]",
+    "{": "}",
+    '"': '"',
+    "'": "'",
+  };
+  const closeToOpen = {
+    ")": "(",
+    "]": "[",
+    "}": "{",
+    '"': '"',
+    "'": "'",
+  };
+  const key = event.key;
+  if (!pairs[key] && !closeToOpen[key]) return false;
+  if (event.ctrlKey || event.metaKey || event.altKey) return false;
+
+  const { start, end, value } = selectedRange();
+  const selected = value.slice(start, end);
+
+  if (start === end && value[start] === key && closeToOpen[key]) {
+    event.preventDefault();
+    setEditorText(value, start + 1);
+    return true;
+  }
+
+  if (pairs[key]) {
+    event.preventDefault();
+    const close = pairs[key];
+    if (selected) {
+      replaceEditorRange(start, end, `${key}${selected}${close}`, start + 1, end + 1);
+      return true;
+    }
+    replaceEditorRange(start, end, `${key}${close}`, start + 1);
+    return true;
+  }
+
+  if (value[start] === key && start === end) {
+    event.preventDefault();
+    setEditorText(value, start + 1);
+    return true;
+  }
+
+  return false;
+}
+
+function handleBackspacePair(event) {
+  if (event.key !== "Backspace" || event.ctrlKey || event.metaKey || event.altKey) return false;
+  const { start, end, value } = selectedRange();
+  if (start !== end || start <= 0) return false;
+  const before = value[start - 1];
+  const after = value[start];
+  const pairs = {
+    "(": ")",
+    "[": "]",
+    "{": "}",
+    '"': '"',
+    "'": "'",
+  };
+  if (pairs[before] !== after) return false;
+  event.preventDefault();
+  replaceEditorRange(start - 1, start + 1, "", start - 1);
+  return true;
+}
+
+function handleSmartEnter(event) {
+  if (event.key !== "Enter" || event.ctrlKey || event.metaKey || event.altKey) return false;
+  const { start, end, value } = selectedRange();
+  const indent = lineIndentAt(value, start);
+  const before = value[start - 1] || "";
+  const after = value[start] || "";
+  event.preventDefault();
+
+  if (before === "{" && after === "}") {
+    const inserted = `\n${indent}    \n${indent}`;
+    replaceEditorRange(start, end, inserted, start + indent.length + 5);
+    return true;
+  }
+
+  const extraIndent = before === "{" || before === ":" ? "    " : "";
+  const inserted = `\n${indent}${extraIndent}`;
+  replaceEditorRange(start, end, inserted, start + inserted.length);
+  return true;
+}
+
+function handleTabIndent(event) {
+  if (event.key !== "Tab") return false;
+  event.preventDefault();
+
+  const { start, end, value } = selectedRange();
+  if (start === end) {
+    replaceEditorRange(start, end, "    ", start + 4);
+    return true;
+  }
+
+  const blockStart = lineStartAt(value, start);
+  const blockEnd = lineEndAt(value, end);
+  const block = value.slice(blockStart, blockEnd);
+  const lines = block.split("\n");
+  let updated;
+  let startShift = 0;
+  let endShift = 0;
+
+  if (event.shiftKey) {
+    updated = lines.map((line, index) => {
+      const removed = line.startsWith("    ") ? 4 : line.startsWith("\t") ? 1 : 0;
+      if (index === 0) startShift = -Math.min(removed, start - blockStart);
+      endShift -= removed;
+      return removed ? line.slice(removed) : line;
+    }).join("\n");
+  } else {
+    updated = lines.map((line) => `    ${line}`).join("\n");
+    startShift = 4;
+    endShift = lines.length * 4;
+  }
+
+  const newText = value.slice(0, blockStart) + updated + value.slice(blockEnd);
+  setEditorText(newText, Math.max(blockStart, start + startShift), Math.max(blockStart, end + endShift));
+  return true;
+}
+
+function toggleLineComment(event) {
+  if (event.key !== "/" || (!event.ctrlKey && !event.metaKey) || event.altKey) return false;
+  event.preventDefault();
+
+  const { start, end, value } = selectedRange();
+  const blockStart = lineStartAt(value, start);
+  const blockEnd = lineEndAt(value, end);
+  const block = value.slice(blockStart, blockEnd);
+  const lines = block.split("\n");
+  const hasCodeLine = lines.some((line) => line.trim().length > 0);
+  const shouldUncomment = hasCodeLine && lines
+    .filter((line) => line.trim().length > 0)
+    .every((line) => /^(\s*)\/\//.test(line));
+
+  let startShift = 0;
+  let endShift = 0;
+  const updated = lines.map((line, index) => {
+    if (!line.trim()) return line;
+    if (shouldUncomment) {
+      const next = line.replace(/^(\s*)\/\/ ?/, "$1");
+      const diff = next.length - line.length;
+      if (index === 0) startShift += diff;
+      endShift += diff;
+      return next;
+    }
+    const next = line.replace(/^(\s*)/, "$1// ");
+    const diff = next.length - line.length;
+    if (index === 0) startShift += diff;
+    endShift += diff;
+    return next;
+  }).join("\n");
+
+  const newText = value.slice(0, blockStart) + updated + value.slice(blockEnd);
+  setEditorText(newText, Math.max(blockStart, start + startShift), Math.max(blockStart, end + endShift));
+  return true;
+}
+
+function handleEditorKeydown(event) {
+  if (
+    toggleLineComment(event) ||
+    handleTabIndent(event) ||
+    handleSmartEnter(event) ||
+    handleBackspacePair(event) ||
+    handleAutoPair(event)
+  ) {
+    return;
+  }
+}
+
 function updateLineNumbers() {
   const count = Math.max(1, codeInput.value.split("\n").length);
   lineNumbers.textContent = Array.from({ length: count }, (_value, index) => index + 1).join("\n");
@@ -334,6 +548,7 @@ codeInput.addEventListener("input", () => {
   updateLineNumbers();
   saveState();
 });
+codeInput.addEventListener("keydown", handleEditorKeydown);
 codeInput.addEventListener("scroll", () => {
   lineNumbers.scrollTop = codeInput.scrollTop;
 });
