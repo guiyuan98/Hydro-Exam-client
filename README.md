@@ -22,7 +22,7 @@
 - Hydro WSL 部署脚本：提供安装、启动、管理员初始化、局域网发布脚本。
 - 旧 Hydro 数据迁移文档：支持从已有 Hydro 站点迁移用户、题目、比赛、提交和测试数据。
 
-> 注意：本项目属于用户态监考方案，适合受控 Windows 机房、管理员权限和非内核级对抗条件。论文或文档中不要声称“绝对防作弊”。
+> 注意：本项目属于用户态监考方案，适合受控 Windows 机房、管理员权限和非内核级对抗条件。不要将其描述为“绝对防作弊”。
 
 ## 项目结构
 
@@ -30,7 +30,7 @@
 client/oj-shell/              Electron 学生考试客户端
 client/oj-shell/gyoj-shell.json  客户端核心配置文件
 deploy/                       Hydro 部署、启动、局域网发布脚本
-docs/                         接入、迁移、测试、论文相关文档
+docs/                         接入、迁移、测试和运维文档
 server/                       Hydro 监考插件后续扩展设计
 ```
 
@@ -266,23 +266,8 @@ docs/hydro-data-migration.md
 - 示例题是否能提交并评测。
 - Hydro 的 Server BaseURL 是否改成新地址。
 
-## 八、毕业设计建议
-
-推荐论文题目：
-
-**《面向 OI 竞赛的在线评测系统安全考试客户端设计与实现》**
-
-可写创新点：
-
-- Hydro OJ 与 Windows 考试客户端的一体化。
-- 本地样例测评与远程隐藏数据判题分离。
-- 基于客户端行为限制的用户态监考。
-- 面向 OI 赛制的受控编辑、样例运行和提交流程。
-- 后续可扩展 Hydro 插件，实现心跳、违规事件、IP/机器绑定和监考看板。
-
-## 参考文档
+## 八、参考文档
 
 - Hydro 官方文档：https://hydro.js.org/zh/docs/Hydro
 - Hydro 安装文档：https://hydro.js.org/zh/docs/Hydro/install
 - 数据迁移说明：`docs/hydro-data-migration.md`
-

@@ -7,7 +7,7 @@
 - Hydro 官方文档：https://hydro.js.org/zh/docs/Hydro
 - Hydro 安装文档：https://hydro.js.org/zh/docs/Hydro/install
 
-Hydro 提供题库、比赛、提交、排名、沙箱判题、插件扩展和多种题目导入能力，适合作为毕业设计中的 OJ 服务端底座。
+Hydro 提供题库、比赛、提交、排名、沙箱判题、插件扩展和多种题目导入能力，适合作为本项目的 OJ 服务端底座。
 
 ## 本机部署结果
 
@@ -60,4 +60,3 @@ npm run start:dev -- --oj-url=http://localhost
 - `ProctorEvent`：违规事件，记录切屏、复制粘贴、进程命中、IP 变化、教师解锁。
 
 客户端通过 Hydro 插件 API 上报心跳和违规事件，Hydro 管理端提供监考看板。
-
