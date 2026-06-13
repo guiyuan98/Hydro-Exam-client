@@ -1,5 +1,5 @@
 {
-  "serverBaseUrl": "https://qduoj.com",
+  "serverBaseUrl": "http://192.168.1.149",
   "clientVersion": "0.1.0",
   "compilerPath": "../../../.qt/Tools/mingw1310_64/bin/g++.exe",
   "heartbeatSeconds": 10,

@@ -1,7 +1,7 @@
 {
   "name": "gyoj-oj-shell",
   "version": "0.1.0",
-  "description": "QingdaoU OnlineJudge secure desktop shell with local OI editor",
+  "description": "Hydro OJ secure desktop shell with local OI editor",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",

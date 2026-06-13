@@ -1,46 +1,13 @@
-# OnlineJudge 服务端监考扩展
+# Hydro 监考扩展预留目录
 
-本目录提供一个可嵌入 QingdaoU OnlineJudge 后端的 Django 应用原型：
+当前版本已经把服务端底座切换为 Hydro OJ。Hydro 本体负责账号、题库、比赛、提交、排名和远程判题；考试客户端负责受控入口、本地编辑器、本地样例运行和基础监考。
 
-```text
-server/onlinejudge_proctoring
-```
+后续服务端监考审计建议实现为 Hydro 插件，而不是独立 Django 应用。建议插件能力：
 
-它用于保存考试客户端的会话、策略和违规事件。
+- 考试策略：是否必须使用客户端、是否禁止复制粘贴、是否启用切屏锁定、心跳超时、进程黑名单、网络白名单。
+- 考试会话：用户、比赛、机器指纹、IP、客户端版本、最近心跳、锁定状态。
+- 违规事件：复制粘贴、切屏、失焦、黑名单进程、IP 变化、机器变化、教师解锁。
+- 管理看板：在线状态、最近心跳、违规次数、远程锁定和远程解锁。
 
-## 数据模型
+客户端当前已具备本地限制能力，下一阶段可在 Hydro 插件中开放 REST API，用于心跳和违规事件上报。
 
-- `ExamPolicy`：考试策略，例如是否必须使用客户端、是否禁止复制粘贴、心跳超时时间、客户端最低版本。
-- `ExamSession`：一次学生考试会话，记录用户、比赛、公网 IP、机器指纹、客户端版本、状态和最近心跳。
-- `ProctorEvent`：违规事件，例如切屏、复制粘贴、黑名单进程、IP 变化、机器变化。
-
-## 接入方式
-
-复制目录到 OnlineJudge 后端工程：
-
-```text
-OnlineJudge/onlinejudge_proctoring
-```
-
-在 Django settings 中加入：
-
-```python
-INSTALLED_APPS += ["onlinejudge_proctoring"]
-```
-
-挂载路由：
-
-```python
-url(r"^api/proctoring/", include("onlinejudge_proctoring.urls")),
-```
-
-执行迁移：
-
-```bash
-python3 manage.py makemigrations
-python3 manage.py migrate
-```
-
-## 当前状态
-
-这是毕业设计原型模块，已经包含基础模型、序列化器、服务函数、API 视图和 Django Admin 配置。后续需要根据实际 OnlineJudge 版本调整认证、权限和用户模型引用。

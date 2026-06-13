@@ -4,7 +4,7 @@
 #include <QStringList>
 
 struct AppConfig {
-    QString serverBaseUrl = "https://qduoj.com";
+    QString serverBaseUrl = "http://192.168.1.149";
     QString clientVersion = "0.1.0";
     QString compilerPath = "../../../.qt/Tools/mingw1310_64/bin/g++.exe";
     QStringList defaultProcessBlacklist = {

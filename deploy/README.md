@@ -1,93 +1,86 @@
-# 自部署 QingdaoU OnlineJudge
+# Hydro OJ 部署说明
 
-本目录用于把项目部署成“自己的青岛 OJ”，而不是打开官方演示站。
-
-官方部署方式是使用 `OnlineJudgeDeploy` 的 `2.0` 分支，并通过 Docker Compose 一键启动。当前上游公开标签最新仍是 `v1.6.1`，`2.0` 分支也指向该标签；如果你使用的是新版 fork 或新版分支，可以通过脚本参数替换部署来源。
+本目录用于把 GYOJ 部署成“自己的 Hydro OJ + Windows 考试客户端”，不是打开 Hydro 官方演示站。Hydro 官方文档推荐 Linux 环境，安装脚本为：
 
 ```bash
-git clone -b 2.0 https://github.com/QingdaoU/OnlineJudgeDeploy.git
-cd OnlineJudgeDeploy
-docker-compose up -d
+LANG=zh . <(curl https://hydro.ac/setup.sh)
 ```
 
-本项目额外提供 PowerShell 脚本，便于在 Windows/服务器上统一初始化。
+本项目在 Windows 上采用 WSL2 部署 Hydro，在 Windows 客户端里加载 Hydro 页面。
 
-## 1. 前置条件
-
-- 已安装 Docker Desktop 或 Linux Docker Engine。
-- 已安装 Git。
-- Windows 上建议开启 Docker Desktop 的 WSL2 后端。
-
-当前这台机器没有检测到 `docker` 命令，所以这里暂时不能直接跑容器。
-
-## 2. 一键拉取并启动
+## 1. 安装 Hydro
 
 ```powershell
 cd C:\Users\13456\Documents\GYOJ
-.\deploy\bootstrap-onlinejudge.ps1 -InstallDir C:\OJ\OnlineJudgeDeploy -PublicHost http://127.0.0.1
+.\deploy\install-hydro-wsl.ps1 -Distro Ubuntu-26.04-E
 ```
 
-使用指定新版仓库或分支：
+安装后检查：
 
 ```powershell
-.\deploy\bootstrap-onlinejudge.ps1 `
-  -InstallDir C:\OJ\OnlineJudgeDeploy `
-  -PublicHost http://192.168.1.149 `
-  -DeployRepo https://github.com/你的新版部署仓库/OnlineJudgeDeploy.git `
-  -DeployBranch main `
-  -Update
+.\deploy\start-hydro-wsl.ps1
 ```
 
-启动后访问：
+PM2 应显示 `hydrooj`、`hydro-sandbox`、`mongodb`、`caddy` 在线。本机访问：
 
 ```text
-http://127.0.0.1
+http://localhost/
 ```
 
-当前这台服务器的局域网访问地址是：
+## 2. 初始化超级管理员
 
-```text
-http://192.168.1.149
+如果是全新 Hydro，可执行：
+
+```powershell
+.\deploy\init-hydro-admin.ps1 `
+  -Distro Ubuntu-26.04-E `
+  -BaseUrl http://localhost `
+  -Email guiyuan98@foxmail.com `
+  -Username admin `
+  -Password "Admin@123456"
 ```
 
-如果学生电脑无法访问，请用管理员权限打开 PowerShell 后执行：
+也可以按 Hydro 官方提示：先在网页注册账号，再运行：
+
+```powershell
+wsl -d Ubuntu-26.04-E -u root -- bash -lc "export PATH=/root/.nix-profile/bin:/usr/local/bin:/usr/bin:/bin; hydrooj cli user setSuperAdmin 2; pm2 restart hydrooj"
+```
+
+## 3. 发布到局域网
+
+WSL 内部服务默认能被 Windows 本机访问，但同一机房学生机要访问 `http://192.168.1.149/`，需要管理员权限建立端口代理：
 
 ```powershell
 cd C:\Users\13456\Documents\GYOJ
-.\deploy\open-server-firewall.ps1
+.\deploy\publish-hydro-lan.ps1
 ```
 
-如果部署到云服务器，把 `PublicHost` 改成你的域名或公网 IP，例如：
+这个脚本会把 Windows `0.0.0.0:80` 转发到 WSL 中的 Hydro `:80`，并添加 Windows 防火墙入站规则。
 
-```powershell
-.\deploy\bootstrap-onlinejudge.ps1 -InstallDir C:\OJ\OnlineJudgeDeploy -PublicHost https://oj.example.com
+## 4. 客户端服务器地址
+
+学生端配置文件：
+
+```text
+C:\Users\13456\Documents\GYOJ\client\oj-shell\gyoj-shell.json
 ```
 
-然后把 `client/oj-shell/gyoj-shell.json` 里的 `serverBaseUrl` 改成同一个地址。
+关键字段：
 
-## 3. 初始化超级管理员
-
-OJ 启动完成后执行：
-
-```powershell
-.\deploy\create-super-admin.ps1 -InstallDir C:\OJ\OnlineJudgeDeploy -Username admin -Password "Admin@123456" -Email admin@example.com
+```json
+{
+  "serverBaseUrl": "http://192.168.1.149",
+  "language": "zh-CN",
+  "editor": { "autoOpen": true },
+  "proctor": { "enabled": true }
+}
 ```
 
-脚本会调用后端容器里的 `python3 manage.py inituser`。如果上游镜像命令有变化，可进入后端容器手工执行：
-
-```bash
-docker exec -it oj-backend /bin/sh
-python3 manage.py inituser --username admin --password "Admin@123456" --action=reset
-```
-
-## 4. 中文界面
-
-客户端会默认设置 `Accept-Language: zh-CN,zh;q=0.9`，并在页面加载后尝试写入常见前端语言配置到 `localStorage`。
-
-如果已有用户仍显示英文，在 OJ 个人设置中把语言改为中文；也可以在数据库中把已有用户语言字段更新为 `zh-CN`，具体字段名以当前上游版本为准。
+如果部署到云服务器，把 `serverBaseUrl` 改成你的公网域名或公网 IP，例如 `https://oj.example.com`。
 
 ## 5. 和考试客户端的关系
 
-- OJ 服务端负责用户、题库、比赛、正式提交、隐藏数据判题、排名。
-- `client/oj-shell` 负责全屏考试入口、本地 C++ 编辑器、样例运行、禁止复制粘贴、切屏锁定、违规提示。
-- 正式隐藏测试数据不进入客户端，仍由远程 JudgeServer/Judger 判题。
+- Hydro 负责账号、题库、比赛、正式提交、隐藏数据判题和排名。
+- `client/oj-shell` 负责全屏考试入口、本地 C++ 编辑器、样例运行、禁止复制粘贴、切屏锁定和违规提示。
+- 隐藏测试数据只保存在 Hydro 服务端，客户端只运行题面样例和自定义样例。
+

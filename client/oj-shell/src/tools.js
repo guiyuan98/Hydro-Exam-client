@@ -6,6 +6,11 @@ const runButton = document.querySelector("#run");
 const output = document.querySelector("#output");
 const status = document.querySelector("#status");
 
+async function initDefaultUrl() {
+  const target = await window.gyoj.getDefaultOjUrl();
+  urlInput.value = target;
+}
+
 async function loadOjUrl() {
   const target = await window.gyoj.loadOjUrl(urlInput.value);
   urlInput.value = target;
@@ -48,6 +53,9 @@ urlInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") loadOjUrl();
 });
 runButton.addEventListener("click", runSample);
+initDefaultUrl().catch(() => {
+  urlInput.value = "http://192.168.1.149";
+});
 
 window.gyoj.onToolsVisible((visible) => {
   if (visible) codeInput.focus();

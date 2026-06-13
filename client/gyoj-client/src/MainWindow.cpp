@@ -28,9 +28,9 @@ MainWindow::MainWindow(QWidget* parent)
     buildUi();
 
     connect(m_api, &ApiClient::submitReceived, this, [this](const QJsonObject& payload) {
-        m_output->append("\n[Remote OnlineJudge submit response]\n" +
+        m_output->append("\n[Remote Hydro OJ submit response]\n" +
                          QString::fromUtf8(QJsonDocument(payload).toJson(QJsonDocument::Indented)));
-        m_status->setText("Submitted to QingdaoU OnlineJudge");
+        m_status->setText("Submitted to Hydro OJ");
     });
     connect(m_api, &ApiClient::apiError, this, &MainWindow::handleApiError);
     connect(m_proctor, &ProctorController::violationDetected, this,
@@ -61,10 +61,10 @@ MainWindow::MainWindow(QWidget* parent)
 
 void MainWindow::buildUi()
 {
-    setWindowTitle("GYOJ - QingdaoU OnlineJudge Secure Client");
+    setWindowTitle("GYOJ - Hydro OJ Secure Client");
     QtWebView::initialize();
 
-    auto* toolbar = addToolBar("OnlineJudge");
+    auto* toolbar = addToolBar("Hydro OJ");
     toolbar->setMovable(false);
     toolbar->addWidget(new QLabel("OJ ", toolbar));
     m_urlInput = new QLineEdit(m_config.serverBaseUrl, toolbar);
@@ -130,7 +130,7 @@ void MainWindow::buildUi()
     m_toolsPanel->hide();
     setCentralWidget(m_splitter);
 
-    m_status = new QLabel("OnlineJudge web page is the primary exam UI");
+    m_status = new QLabel("Hydro OJ web page is the primary exam UI");
     statusBar()->addPermanentWidget(m_status, 1);
 
     m_lockOverlay = new QWidget(this);
@@ -168,7 +168,7 @@ void MainWindow::setOjUrl(const QString& url)
         m_webView->rootContext()->setContextProperty("initialUrl", target);
         m_webView->setSource(QUrl::fromLocalFile(QCoreApplication::applicationDirPath() + "/qml/OjWebView.qml"));
     }
-    m_status->setText("Loaded OnlineJudge web UI: " + target);
+    m_status->setText("Loaded Hydro OJ web UI: " + target);
 }
 
 void MainWindow::toggleLocalTools()
@@ -210,7 +210,7 @@ void MainWindow::submitCode()
     m_contestId = m_contestIdInput->text().trimmed().toInt();
     m_problemInternalId = m_problemIdInput->text().trimmed().toInt();
     if (!m_problemInternalId) {
-        m_output->append("Remote submit needs the OnlineJudge internal problem id.");
+        m_output->append("Remote submit needs the Hydro problem id.");
         m_toolsPanel->show();
         return;
     }

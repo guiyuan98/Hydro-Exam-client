@@ -59,6 +59,16 @@ function normalizedUrl(url) {
   return `https://${value}`;
 }
 
+function cliOjUrl() {
+  const prefix = "--oj-url=";
+  const value = process.argv.find((arg) => String(arg).startsWith(prefix));
+  return value ? value.slice(prefix.length) : "";
+}
+
+function defaultOjUrl() {
+  return normalizedUrl(cliOjUrl() || config.serverBaseUrl);
+}
+
 function resolveCompilerPath() {
   const configured = String(config.compilerPath || "").trim();
   const candidates = [];
@@ -208,7 +218,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
-    title: "GYOJ OnlineJudge Client",
+    title: "GYOJ Hydro OJ Client",
     backgroundColor: "#ffffff",
     fullscreen: examMode,
     kiosk: examMode,
@@ -254,7 +264,7 @@ function createWindow() {
   blockExamShortcuts(toolsWindow.webContents);
   blockExamShortcuts(lockWindow.webContents);
   toolsWindow.loadFile(path.join(__dirname, "tools.html"));
-  mainWindow.loadURL(normalizedUrl(config.serverBaseUrl));
+  mainWindow.loadURL(defaultOjUrl());
   mainWindow.webContents.on("did-finish-load", injectChinesePreference);
   setLayout();
   if (editorAutoOpen()) {
@@ -346,6 +356,8 @@ ipcMain.handle("load-oj-url", async (_event, url) => {
   await mainWindow.loadURL(target);
   return target;
 });
+
+ipcMain.handle("get-default-oj-url", async () => defaultOjUrl());
 
 ipcMain.handle("unlock-exam", async (_event, password) => unlockExam(password));
 
