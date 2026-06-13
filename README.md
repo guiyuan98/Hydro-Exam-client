@@ -149,6 +149,7 @@ client/oj-shell/gyoj-shell.json
     "teacherUnlockPassword": "CHANGE_ME_TEACHER_UNLOCK_PASSWORD",
     "clearClipboard": true,
     "lockOnBlur": true,
+    "terminateBlacklistedProcesses": true,
     "processBlacklist": [
       "chrome.exe",
       "msedge.exe",
@@ -178,7 +179,8 @@ client/oj-shell/gyoj-shell.json
 | `teacherUnlockPassword` | 教师解锁密码。正式使用前必须修改。 |
 | `clearClipboard` | 是否定时清空剪贴板。 |
 | `lockOnBlur` | 客户端失去焦点后是否锁定考试。 |
-| `processBlacklist` | 黑名单进程列表，命中后锁定考试。 |
+| `terminateBlacklistedProcesses` | 命中黑名单进程后是否尝试强制关闭该软件及其子进程。 |
+| `processBlacklist` | 黑名单进程列表，命中后会锁定考试；如果 `terminateBlacklistedProcesses` 为 `true`，还会调用 Windows `taskkill /F /T /IM` 尝试关闭违规软件。 |
 
 常见配置场景：
 

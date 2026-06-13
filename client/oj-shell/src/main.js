@@ -21,6 +21,7 @@ function loadConfig() {
       teacherUnlockPassword: "CHANGE_ME_TEACHER_UNLOCK_PASSWORD",
       clearClipboard: true,
       lockOnBlur: true,
+      terminateBlacklistedProcesses: true,
       processBlacklist: [
         "chrome.exe",
         "msedge.exe",
@@ -51,6 +52,7 @@ let locked = false;
 let clipboardTimer;
 let processTimer;
 let appQuitting = false;
+const terminatedProcessNames = new Set();
 
 app.commandLine.appendSwitch("lang", config.language || "zh-CN");
 
@@ -194,12 +196,19 @@ function parseTaskList(stdout) {
 function startProcessGuard() {
   if (!proctorEnabled()) return;
   const blacklist = new Set((config.proctor?.processBlacklist || []).map((name) => String(name).toLowerCase()));
+  const terminateProcesses = config.proctor?.terminateBlacklistedProcesses !== false;
   processTimer = setInterval(() => {
     childProcess.exec("tasklist /fo csv /nh", { windowsHide: true }, (_error, stdout) => {
       const running = parseTaskList(stdout);
       const hit = running.find((name) => blacklist.has(name));
       if (hit) {
-        lockExam(`检测到禁止进程: ${hit}`);
+        if (terminateProcesses && !terminatedProcessNames.has(hit)) {
+          terminatedProcessNames.add(hit);
+          childProcess.execFile("taskkill", ["/F", "/T", "/IM", hit], { windowsHide: true }, () => {
+            terminatedProcessNames.delete(hit);
+          });
+        }
+        lockExam(terminateProcesses ? `检测到违规软件，已尝试强制关闭: ${hit}` : `检测到禁止进程: ${hit}`);
       }
     });
   }, 5000);

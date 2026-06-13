@@ -11,6 +11,7 @@
     "teacherUnlockPassword": "CHANGE_ME_TEACHER_UNLOCK_PASSWORD",
     "clearClipboard": true,
     "lockOnBlur": true,
+    "terminateBlacklistedProcesses": true,
     "processBlacklist": [
       "chrome.exe",
       "msedge.exe",
