@@ -1,5 +1,9 @@
 const urlInput = document.querySelector("#url");
 const goButton = document.querySelector("#go");
+const openSourceButton = document.querySelector("#openSource");
+const saveSourceButton = document.querySelector("#saveSource");
+const saveSourceAsButton = document.querySelector("#saveSourceAs");
+const importZipButton = document.querySelector("#importZip");
 const runAllButton = document.querySelector("#runAll");
 const addSourceButton = document.querySelector("#addSource");
 const addCaseButton = document.querySelector("#addCase");
@@ -7,7 +11,10 @@ const runCurrentButton = document.querySelector("#runCurrent");
 const deleteCaseButton = document.querySelector("#deleteCase");
 const sourceList = document.querySelector("#sourceList");
 const caseList = document.querySelector("#caseList");
+const sourceCount = document.querySelector("#sourceCount");
+const caseCount = document.querySelector("#caseCount");
 const activeTab = document.querySelector("#activeTab");
+const filePathText = document.querySelector("#filePath");
 const statusText = document.querySelector("#status");
 const codeInput = document.querySelector("#code");
 const lineNumbers = document.querySelector("#lineNumbers");
@@ -19,7 +26,7 @@ const resultList = document.querySelector("#resultList");
 const stdoutPanel = document.querySelector("#stdoutPanel");
 const stderrPanel = document.querySelector("#stderrPanel");
 
-const STORAGE_KEY = "hydro-local-tools-workspace-v2";
+const STORAGE_KEY = "hydro-local-tools-workspace-v3";
 
 const cppTemplate = `#include <bits/stdc++.h>
 using namespace std;
@@ -42,7 +49,7 @@ function defaultState() {
     activeSourceId: "main",
     activeCaseId: "case-0",
     sources: [
-      { id: "main", name: "main.cpp", code: cppTemplate },
+      { id: "main", name: "main.cpp", path: "", code: cppTemplate, dirty: false },
     ],
     cases: [
       { id: "case-0", name: "0", input: "1 2\n", expected: "3\n", last: null },
@@ -51,10 +58,37 @@ function defaultState() {
   };
 }
 
+function normalizeSource(source) {
+  return {
+    id: source.id || `source-${Date.now()}`,
+    name: source.name || "main.cpp",
+    path: source.path || "",
+    code: source.code || "",
+    dirty: Boolean(source.dirty),
+  };
+}
+
+function normalizeCase(testCase, index) {
+  return {
+    id: testCase.id || `case-${Date.now()}-${index}`,
+    name: testCase.name || String(index),
+    input: testCase.input || "",
+    expected: testCase.expected || "",
+    last: testCase.last || null,
+  };
+}
+
 function loadState() {
   try {
     const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "");
-    if (value?.sources?.length && value?.cases?.length) return value;
+    if (value?.sources?.length && value?.cases?.length) {
+      return {
+        activeSourceId: value.activeSourceId,
+        activeCaseId: value.activeCaseId,
+        sources: value.sources.map(normalizeSource),
+        cases: value.cases.map(normalizeCase),
+      };
+    }
   } catch {}
   return defaultState();
 }
@@ -85,7 +119,9 @@ function setStatus(text) {
 }
 
 function syncEditorAfterProgrammaticChange() {
-  activeSource().code = codeInput.value;
+  const source = activeSource();
+  source.code = codeInput.value;
+  source.dirty = true;
   updateLineNumbers();
   saveState();
 }
@@ -127,20 +163,8 @@ function replaceEditorRange(start, end, inserted, caretStart = start + inserted.
 }
 
 function handleAutoPair(event) {
-  const pairs = {
-    "(": ")",
-    "[": "]",
-    "{": "}",
-    '"': '"',
-    "'": "'",
-  };
-  const closeToOpen = {
-    ")": "(",
-    "]": "[",
-    "}": "{",
-    '"': '"',
-    "'": "'",
-  };
+  const pairs = { "(": ")", "[": "]", "{": "}", '"': '"', "'": "'" };
+  const closeToOpen = { ")": "(", "]": "[", "}": "{", '"': '"', "'": "'" };
   const key = event.key;
   if (!pairs[key] && !closeToOpen[key]) return false;
   if (event.ctrlKey || event.metaKey || event.altKey) return false;
@@ -165,12 +189,6 @@ function handleAutoPair(event) {
     return true;
   }
 
-  if (value[start] === key && start === end) {
-    event.preventDefault();
-    setEditorText(value, start + 1);
-    return true;
-  }
-
   return false;
 }
 
@@ -180,13 +198,7 @@ function handleBackspacePair(event) {
   if (start !== end || start <= 0) return false;
   const before = value[start - 1];
   const after = value[start];
-  const pairs = {
-    "(": ")",
-    "[": "]",
-    "{": "}",
-    '"': '"',
-    "'": "'",
-  };
+  const pairs = { "(": ")", "[": "]", "{": "}", '"': '"', "'": "'" };
   if (pairs[before] !== after) return false;
   event.preventDefault();
   replaceEditorRange(start - 1, start + 1, "", start - 1);
@@ -303,13 +315,23 @@ function updateLineNumbers() {
   lineNumbers.textContent = Array.from({ length: count }, (_value, index) => index + 1).join("\n");
 }
 
+function statusClass(status) {
+  if (status === "通过") return "pass";
+  if (status === "超时") return "warn";
+  if (status && status !== "未运行" && status !== "已运行") return "fail";
+  return "";
+}
+
 function renderSources() {
   sourceList.innerHTML = "";
+  sourceCount.textContent = String(state.sources.length);
   for (const source of state.sources) {
     const row = document.createElement("div");
     row.className = `file-item ${source.id === state.activeSourceId ? "active" : ""}`;
-    row.innerHTML = `<span>C++</span><span class="file-name"></span><span class="file-status">src</span>`;
-    row.querySelector(".file-name").textContent = source.name;
+    row.innerHTML = `<span class="file-kind">CPP</span><span class="file-name"></span><span class="file-status"></span>`;
+    row.querySelector(".file-name").textContent = `${source.name}${source.dirty ? " *" : ""}`;
+    row.querySelector(".file-status").textContent = source.path ? "本地" : "草稿";
+    row.title = source.path || source.name;
     row.addEventListener("click", () => {
       syncInputsToState();
       state.activeSourceId = source.id;
@@ -321,12 +343,13 @@ function renderSources() {
 
 function renderCases() {
   caseList.innerHTML = "";
+  caseCount.textContent = String(state.cases.length);
   for (const testCase of state.cases) {
     const active = testCase.id === state.activeCaseId ? "active" : "";
     const last = testCase.last?.status || "";
     const row = document.createElement("div");
     row.className = `file-item ${active}`;
-    row.innerHTML = `<span>IO</span><span class="file-name"></span><span class="file-status"></span>`;
+    row.innerHTML = `<span class="file-kind">IO</span><span class="file-name"></span><span class="file-status"></span>`;
     row.querySelector(".file-name").textContent = `${testCase.name}.in / ${testCase.name}.out`;
     row.querySelector(".file-status").textContent = last;
     row.addEventListener("click", () => {
@@ -340,7 +363,8 @@ function renderCases() {
 
 function renderEditor() {
   const source = activeSource();
-  activeTab.textContent = source.name;
+  activeTab.textContent = `${source.name}${source.dirty ? " *" : ""}`;
+  filePathText.textContent = source.path || "未保存的本地文件";
   if (codeInput.value !== source.code) codeInput.value = source.code;
   updateLineNumbers();
 }
@@ -361,9 +385,8 @@ function renderResults() {
   for (const testCase of state.cases) {
     const last = testCase.last;
     const status = last?.status || "未运行";
-    const cardState = status === "通过" ? "pass" : status === "未运行" ? "" : status === "超时" ? "warn" : "fail";
     const card = document.createElement("div");
-    card.className = `result-card ${cardState}`;
+    card.className = `result-card ${statusClass(status)}`;
     card.innerHTML = `
       <div class="result-head">
         <span>${testCase.name}.in / ${testCase.name}.out</span>
@@ -492,8 +515,9 @@ function addSource() {
   syncInputsToState();
   const index = state.sources.length + 1;
   const id = `source-${Date.now()}`;
-  state.sources.push({ id, name: `solution${index}.cpp`, code: cppTemplate });
+  state.sources.push({ id, name: `solution${index}.cpp`, path: "", code: cppTemplate, dirty: false });
   state.activeSourceId = id;
+  setStatus("已新建源码文件");
   render();
 }
 
@@ -503,6 +527,7 @@ function addCase() {
   const id = `case-${Date.now()}`;
   state.cases.push({ id, name: String(nextNumber), input: "", expected: "", last: null });
   state.activeCaseId = id;
+  setStatus("已新建测试点");
   render();
 }
 
@@ -511,6 +536,77 @@ function deleteActiveCase() {
   const index = state.cases.findIndex((item) => item.id === state.activeCaseId);
   state.cases.splice(index, 1);
   state.activeCaseId = state.cases[Math.max(0, index - 1)].id;
+  setStatus("已删除测试点");
+  render();
+}
+
+async function openSourceFile() {
+  syncInputsToState();
+  const result = await window.gyoj.openSourceFile();
+  if (result.canceled) return;
+  const file = result.file;
+  const existing = state.sources.find((item) => item.path && item.path === file.path);
+  if (existing) {
+    existing.code = file.code;
+    existing.name = file.name;
+    existing.dirty = false;
+    state.activeSourceId = existing.id;
+  } else {
+    const id = `source-${Date.now()}`;
+    state.sources.push({ id, name: file.name, path: file.path, code: file.code, dirty: false });
+    state.activeSourceId = id;
+  }
+  setStatus(`已打开 ${file.name}`);
+  render();
+}
+
+async function saveSource(forceSaveAs = false) {
+  syncInputsToState();
+  const source = activeSource();
+  const payload = {
+    name: source.name,
+    path: forceSaveAs ? "" : source.path,
+    code: source.code,
+  };
+  const result = forceSaveAs
+    ? await window.gyoj.saveSourceFileAs(payload)
+    : await window.gyoj.saveSourceFile(payload);
+  if (result.canceled) return;
+  source.name = result.file.name;
+  source.path = result.file.path;
+  source.dirty = false;
+  setStatus(`已保存 ${source.name}`);
+  render();
+}
+
+async function importTestZip() {
+  syncInputsToState();
+  setStatus("正在导入 zip 数据包...");
+  const result = await window.gyoj.importTestZip();
+  if (result.canceled) {
+    setStatus("已取消导入");
+    return;
+  }
+  if (!result.ok) {
+    setStatus("导入失败");
+    stderrPanel.textContent = result.message || "导入 zip 失败";
+    activateResultPanel("stderr");
+    return;
+  }
+  if (!result.cases.length) {
+    setStatus("zip 中没有找到 .in/.out 数据");
+    return;
+  }
+  const replace = state.cases.length <= 2 || confirm(`从 ${result.name} 识别到 ${result.count} 组数据，是否替换当前测试数据？\n选择“取消”则追加到当前列表。`);
+  const importedCases = result.cases.map(normalizeCase);
+  if (replace) {
+    state.cases = importedCases;
+  } else {
+    state.cases.push(...importedCases);
+  }
+  state.activeCaseId = importedCases[0].id;
+  setStatus(`已导入 ${result.count} 组测试数据`);
+  activateResultPanel("summary");
   render();
 }
 
@@ -537,6 +633,10 @@ goButton.addEventListener("click", loadOjUrl);
 urlInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") loadOjUrl();
 });
+openSourceButton.addEventListener("click", openSourceFile);
+saveSourceButton.addEventListener("click", () => saveSource(false));
+saveSourceAsButton.addEventListener("click", () => saveSource(true));
+importZipButton.addEventListener("click", importTestZip);
 runAllButton.addEventListener("click", () => runTests());
 runCurrentButton.addEventListener("click", () => runTests([activeCase().id]));
 addSourceButton.addEventListener("click", addSource);
@@ -544,9 +644,13 @@ addCaseButton.addEventListener("click", addCase);
 deleteCaseButton.addEventListener("click", deleteActiveCase);
 
 codeInput.addEventListener("input", () => {
-  activeSource().code = codeInput.value;
+  const source = activeSource();
+  source.code = codeInput.value;
+  source.dirty = true;
   updateLineNumbers();
   saveState();
+  renderSources();
+  renderEditor();
 });
 codeInput.addEventListener("keydown", handleEditorKeydown);
 codeInput.addEventListener("scroll", () => {
@@ -562,6 +666,17 @@ expectedInput.addEventListener("input", () => {
 });
 document.querySelectorAll(".result-tab").forEach((tab) => {
   tab.addEventListener("click", () => activateResultPanel(tab.dataset.panel));
+});
+
+document.addEventListener("keydown", (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+    event.preventDefault();
+    saveSource(event.shiftKey).catch((error) => setStatus(error?.message || "保存失败"));
+  }
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "o") {
+    event.preventDefault();
+    openSourceFile().catch((error) => setStatus(error?.message || "打开失败"));
+  }
 });
 
 initDefaultUrl().catch(() => {

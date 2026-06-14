@@ -1,4 +1,4 @@
-const { app, BrowserWindow, clipboard, globalShortcut, ipcMain, Menu, session } = require("electron");
+const { app, BrowserWindow, clipboard, dialog, globalShortcut, ipcMain, Menu, session } = require("electron");
 const childProcess = require("child_process");
 const fs = require("fs");
 const os = require("os");
@@ -104,7 +104,7 @@ function editorAutoOpen() {
 function setLayout() {
   if (!isLiveWindow(mainWindow) || !isLiveWindow(toolsWindow)) return;
   const bounds = mainWindow.getBounds();
-  const toolsWidth = Math.min(bounds.width - 48, Math.max(980, Math.floor(bounds.width * 0.62)));
+  const toolsWidth = Math.min(bounds.width - 48, Math.max(1120, Math.floor(bounds.width * 0.72)));
   toolsWindow.setBounds({
     x: Math.max(bounds.x, bounds.x + bounds.width - toolsWidth - 24),
     y: bounds.y,
@@ -247,7 +247,7 @@ function createWindow() {
   Menu.setApplicationMenu(null);
 
   toolsWindow = new BrowserWindow({
-    width: 980,
+    width: 1120,
     height: 900,
     title: "Hydro OI 本地编辑器",
     show: false,
@@ -351,6 +351,75 @@ function runCommand(command, args, options = {}) {
   });
 }
 
+function dialogOwner() {
+  if (isLiveWindow(toolsWindow)) return toolsWindow;
+  if (isLiveWindow(mainWindow)) return mainWindow;
+  return undefined;
+}
+
+function sourceFilePayload(filePath) {
+  return {
+    name: path.basename(filePath),
+    path: filePath,
+    code: fs.readFileSync(filePath, "utf8"),
+  };
+}
+
+function walkFiles(dir) {
+  const files = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...walkFiles(fullPath));
+    } else if (entry.isFile()) {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+
+function naturalCompare(a, b) {
+  return String(a).localeCompare(String(b), "zh-CN", { numeric: true, sensitivity: "base" });
+}
+
+function collectZipTestCases(root) {
+  const groups = new Map();
+  for (const filePath of walkFiles(root)) {
+    const ext = path.extname(filePath).toLowerCase();
+    if (![".in", ".out", ".ans"].includes(ext)) continue;
+    const key = path.basename(filePath, ext);
+    const group = groups.get(key) || { name: key, inputPath: "", outputPath: "" };
+    if (ext === ".in") {
+      group.inputPath = filePath;
+    } else if (!group.outputPath || ext === ".out") {
+      group.outputPath = filePath;
+    }
+    groups.set(key, group);
+  }
+
+  return Array.from(groups.values())
+    .filter((item) => item.inputPath || item.outputPath)
+    .sort((a, b) => naturalCompare(a.name, b.name))
+    .map((item, index) => ({
+      id: `zip-${Date.now()}-${index}`,
+      name: item.name || String(index),
+      input: item.inputPath ? fs.readFileSync(item.inputPath, "utf8") : "",
+      expected: item.outputPath ? fs.readFileSync(item.outputPath, "utf8") : "",
+      last: null,
+    }));
+}
+
+async function expandZip(zipPath, targetDir) {
+  const script = "& { param($zipPath, $targetDir) Expand-Archive -LiteralPath $zipPath -DestinationPath $targetDir -Force }";
+  const powershell = await runCommand(
+    "powershell.exe",
+    ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script, zipPath, targetDir],
+    { timeoutMs: 60000 },
+  );
+  if (powershell.ok) return powershell;
+  return runCommand("tar.exe", ["-xf", zipPath, "-C", targetDir], { timeoutMs: 60000 });
+}
+
 ipcMain.handle("run-sample", async (_event, payload) => {
   const workDir = fs.mkdtempSync(path.join(os.tmpdir(), "gyoj-sample-"));
   const sourcePath = path.join(workDir, "main.cpp");
@@ -407,6 +476,82 @@ ipcMain.handle("run-tests", async (_event, payload) => {
     });
   }
   return { phase: "run", compile, tests };
+});
+
+ipcMain.handle("open-source-file", async () => {
+  const result = await dialog.showOpenDialog(dialogOwner(), {
+    title: "打开 C++ 源码文件",
+    properties: ["openFile"],
+    filters: [
+      { name: "C++ 源码", extensions: ["cpp", "cc", "cxx", "c++", "h", "hpp"] },
+      { name: "所有文件", extensions: ["*"] },
+    ],
+  });
+  if (result.canceled || !result.filePaths.length) return { canceled: true };
+  return { canceled: false, file: sourceFilePayload(result.filePaths[0]) };
+});
+
+ipcMain.handle("save-source-file", async (_event, payload) => {
+  let filePath = String(payload?.path || "").trim();
+  if (!filePath) {
+    const result = await dialog.showSaveDialog(dialogOwner(), {
+      title: "保存 C++ 源码文件",
+      defaultPath: payload?.name || "main.cpp",
+      filters: [
+        { name: "C++ 源码", extensions: ["cpp"] },
+        { name: "所有文件", extensions: ["*"] },
+      ],
+    });
+    if (result.canceled || !result.filePath) return { canceled: true };
+    filePath = result.filePath;
+  }
+  fs.writeFileSync(filePath, payload?.code || "", "utf8");
+  return { canceled: false, file: { name: path.basename(filePath), path: filePath } };
+});
+
+ipcMain.handle("save-source-file-as", async (_event, payload) => {
+  const result = await dialog.showSaveDialog(dialogOwner(), {
+    title: "另存 C++ 源码文件",
+    defaultPath: payload?.name || "main.cpp",
+    filters: [
+      { name: "C++ 源码", extensions: ["cpp"] },
+      { name: "所有文件", extensions: ["*"] },
+    ],
+  });
+  if (result.canceled || !result.filePath) return { canceled: true };
+  fs.writeFileSync(result.filePath, payload?.code || "", "utf8");
+  return { canceled: false, file: { name: path.basename(result.filePath), path: result.filePath } };
+});
+
+ipcMain.handle("import-test-zip", async () => {
+  const result = await dialog.showOpenDialog(dialogOwner(), {
+    title: "导入 OI 测试数据 zip",
+    properties: ["openFile"],
+    filters: [
+      { name: "Zip 数据包", extensions: ["zip"] },
+      { name: "所有文件", extensions: ["*"] },
+    ],
+  });
+  if (result.canceled || !result.filePaths.length) return { canceled: true };
+
+  const zipPath = result.filePaths[0];
+  const extractDir = fs.mkdtempSync(path.join(os.tmpdir(), "hydro-oi-data-"));
+  const expanded = await expandZip(zipPath, extractDir);
+  if (!expanded.ok) {
+    return {
+      canceled: false,
+      ok: false,
+      message: expanded.stderr || expanded.stdout || "zip 解压失败",
+    };
+  }
+  const cases = collectZipTestCases(extractDir);
+  return {
+    canceled: false,
+    ok: true,
+    name: path.basename(zipPath),
+    count: cases.length,
+    cases,
+  };
 });
 
 ipcMain.handle("load-oj-url", async (_event, url) => {

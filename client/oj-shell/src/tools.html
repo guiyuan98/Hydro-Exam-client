@@ -7,35 +7,62 @@
     <link rel="stylesheet" href="./tools.css" />
   </head>
   <body>
-    <header class="topbar">
-      <input id="url" value="" spellcheck="false" aria-label="Hydro OJ 地址" />
-      <button id="go" type="button">打开</button>
-      <button id="runAll" type="button">运行全部</button>
+    <header class="appbar">
+      <div class="brand">
+        <div class="brand-mark">OI</div>
+        <div>
+          <div class="brand-title">Hydro OI 本地编辑器</div>
+          <div class="brand-subtitle">源码、样例与官方数据包测试</div>
+        </div>
+      </div>
+      <div class="oj-bar">
+        <input id="url" value="" spellcheck="false" aria-label="Hydro OJ 地址" />
+        <button id="go" type="button">打开 OJ</button>
+      </div>
     </header>
+
+    <div class="toolbar" aria-label="编辑器工具栏">
+      <button id="openSource" type="button">打开源码</button>
+      <button id="saveSource" type="button">保存</button>
+      <button id="saveSourceAs" type="button">另存为</button>
+      <span class="toolbar-separator"></span>
+      <button id="importZip" type="button">导入数据包 zip</button>
+      <button id="addSource" type="button">新建源码</button>
+      <button id="addCase" type="button">新建测试点</button>
+      <span class="toolbar-spacer"></span>
+      <button id="runCurrent" type="button">运行当前</button>
+      <button id="runAll" class="primary" type="button">运行全部</button>
+    </div>
 
     <main class="workbench">
       <aside class="explorer">
-        <div class="panel-title">
-          <span>资源管理器</span>
-          <div class="title-actions">
-            <button id="addSource" type="button" title="新增源码文件">+</button>
-            <button id="addCase" type="button" title="新增测试点">T</button>
+        <section class="tree-section">
+          <div class="section-head">
+            <span>源码文件</span>
+            <span id="sourceCount" class="counter">0</span>
           </div>
-        </div>
-        <div class="tree-section">
-          <div class="section-label">源码</div>
           <div id="sourceList" class="file-list"></div>
-        </div>
-        <div class="tree-section">
-          <div class="section-label">测试数据</div>
+        </section>
+        <section class="tree-section grow">
+          <div class="section-head">
+            <span>测试数据</span>
+            <span id="caseCount" class="counter">0</span>
+          </div>
           <div id="caseList" class="file-list"></div>
+        </section>
+        <div class="hint-panel">
+          <div class="hint-title">数据包规则</div>
+          <div>支持 `.in` 与 `.out/.ans` 自动配对，例如 `1.in` + `1.out`。</div>
         </div>
       </aside>
 
       <section class="editor-pane">
-        <div class="tabs">
-          <div id="activeTab" class="tab">main.cpp</div>
-          <span id="status">F8 显示/隐藏本地编辑器</span>
+        <div class="editor-head">
+          <div>
+            <div id="activeTab" class="tab">main.cpp</div>
+            <div id="filePath" class="file-path">未保存的本地文件</div>
+          </div>
+          <span id="status" class="status-pill">准备就绪</span>
         </div>
         <div class="editor-wrap">
           <pre id="lineNumbers" aria-hidden="true">1</pre>
@@ -49,10 +76,7 @@
             <div id="caseTitle" class="case-title">0.in / 0.out</div>
             <div id="caseMeta" class="case-meta">编辑输入数据和期望输出</div>
           </div>
-          <div class="case-actions">
-            <button id="runCurrent" type="button">运行当前</button>
-            <button id="deleteCase" type="button">删除</button>
-          </div>
+          <button id="deleteCase" type="button">删除</button>
         </div>
 
         <div class="io-grid">
